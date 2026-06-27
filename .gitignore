@@ -1,0 +1,33 @@
+# Secrets
+.env
+.env.*
+
+# Local orchestration/runtime state
+.omc/
+.omx/
+
+# Raw and generated data
+aihub/
+data/raw/
+data/processed/
+reports/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aihub-auradb"
+version = "0.1.0"
+description = "AIHub beauty dataset to AuraDB knowledge graph build tooling"
+requires-python = ">=3.11"
+dependencies = [
+  "neo4j>=5.20,<7",
+]
+
+[project.scripts]
+aihub-auradb = "aihub_auradb.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
