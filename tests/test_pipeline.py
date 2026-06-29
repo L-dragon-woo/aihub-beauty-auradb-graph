@@ -7,6 +7,7 @@ from pathlib import Path
 
 from aihub_auradb.canonical import canonicalize_manifest
 from aihub_auradb.env import allow_self_signed_scheme
+from aihub_auradb.extracted import canonicalize_extracted_tree, extract_zip_tree
 from aihub_auradb.ids import stable_id
 from aihub_auradb.manifest import build_manifest
 from aihub_auradb.profile import profile_json_files
@@ -255,6 +256,30 @@ class PipelineTests(unittest.TestCase):
             self.assertTrue((output / "manifest_full.jsonl").exists())
             self.assertTrue((output / "records" / "records_000001.jsonl").exists())
             quality = json.loads((output / "quality_full.json").read_text(encoding="utf-8"))
+            self.assertTrue(quality["passed"])
+
+    def test_extract_and_canonicalize_extracted_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "aihub"
+            zip_dir = root / "02.sample"
+            zip_dir.mkdir(parents=True)
+            zip_path = zip_dir / "sample.zip"
+            with zipfile.ZipFile(zip_path, "w") as archive:
+                archive.writestr("nested/one.json", json.dumps({"title": "title", "text": "body"}))
+                archive.writestr("nested/image.jpg", b"fake")
+
+            raw = Path(temp) / "raw"
+            extract_summary = extract_zip_tree(root, raw)
+            self.assertEqual(extract_summary.zip_files, 1)
+            self.assertEqual(extract_summary.files, 2)
+            self.assertEqual(len(list(raw.rglob("one.json"))), 1)
+
+            output = Path(temp) / "processed"
+            build_summary = canonicalize_extracted_tree(raw, output, batch_size=1)
+            self.assertEqual(build_summary.source_files, 2)
+            self.assertEqual(build_summary.canonical_files, 1)
+            self.assertEqual(build_summary.records, 1)
+            quality = json.loads((output / "quality_full_extracted.json").read_text(encoding="utf-8"))
             self.assertTrue(quality["passed"])
 
 

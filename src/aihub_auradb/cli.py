@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .canonical import canonicalize_manifest
 from .env import neo4j_config
+from .extracted import canonicalize_extracted_tree, extract_zip_tree
 from .graph_loader import apply_schema, load_canonical_records, load_images_from_manifest, load_record_batches, verify_counts
 from .io import write_jsonl
 from .manifest import build_manifest
@@ -146,6 +147,23 @@ def _cmd_zip_canonicalize(args: argparse.Namespace) -> int:
     return 0 if summary.records else 2
 
 
+def _cmd_extract_zip_tree(args: argparse.Namespace) -> int:
+    summary = extract_zip_tree(Path(args.root), Path(args.output_dir))
+    print(json.dumps(summary.to_dict(), ensure_ascii=False, sort_keys=True))
+    return 0 if summary.files else 2
+
+
+def _cmd_canonicalize_extracted(args: argparse.Namespace) -> int:
+    summary = canonicalize_extracted_tree(
+        root=Path(args.root),
+        output_dir=Path(args.output_dir),
+        batch_size=args.batch_size,
+        manifest_version=args.manifest_version,
+    )
+    print(json.dumps(summary.to_dict(), ensure_ascii=False, sort_keys=True))
+    return 0 if summary.records else 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="aihub-auradb")
     sub = parser.add_subparsers(required=True)
@@ -202,6 +220,18 @@ def build_parser() -> argparse.ArgumentParser:
     zip_canonicalize.add_argument("--manifest-version", default="zip-full")
     zip_canonicalize.add_argument("--max-entries", type=int)
     zip_canonicalize.set_defaults(func=_cmd_zip_canonicalize)
+
+    extract_zip_tree_cmd = sub.add_parser("extract-zip-tree")
+    extract_zip_tree_cmd.add_argument("--root", required=True)
+    extract_zip_tree_cmd.add_argument("--output-dir", required=True)
+    extract_zip_tree_cmd.set_defaults(func=_cmd_extract_zip_tree)
+
+    canonicalize_extracted = sub.add_parser("canonicalize-extracted")
+    canonicalize_extracted.add_argument("--root", required=True)
+    canonicalize_extracted.add_argument("--output-dir", required=True)
+    canonicalize_extracted.add_argument("--batch-size", type=int, default=1000)
+    canonicalize_extracted.add_argument("--manifest-version", default="extracted-full")
+    canonicalize_extracted.set_defaults(func=_cmd_canonicalize_extracted)
 
     auradb_schema = sub.add_parser("auradb-schema")
     auradb_schema.add_argument("--env", default=".env")
